@@ -1,5 +1,5 @@
 import React from 'react';
-import { v, tokens } from '../theme/tokens';
+import { v, tokens, injectBaseStyles } from '../theme/tokens';
 
 export interface SelectOption {
   value: string;
@@ -26,16 +26,20 @@ export function Select({
   style,
   ...props
 }: SelectProps & Omit<React.SelectHTMLAttributes<HTMLSelectElement>, 'style'>) {
+  injectBaseStyles();
+
   return (
     <div style={style}>
       {label && (
         <label
           style={{
             display: 'block',
-            fontSize: '13px',
+            fontSize: '12px',
             fontWeight: 500,
-            color: v(tokens.colorText),
-            marginBottom: '4px',
+            color: v(tokens.colorTextMuted),
+            marginBottom: '6px',
+            letterSpacing: '0.02em',
+            textTransform: 'uppercase' as const,
           }}
         >
           {label}
@@ -46,16 +50,33 @@ export function Select({
         onChange={onChange}
         style={{
           width: '100%',
-          padding: '8px 12px',
+          padding: '10px 14px',
           fontSize: '14px',
           border: `1px solid ${error ? v(tokens.colorDanger) : v(tokens.colorBorder)}`,
           borderRadius: v(tokens.radiusMd),
-          backgroundColor: v(tokens.colorBg),
+          backgroundColor: v(tokens.colorBgSubtle),
           color: v(tokens.colorText),
           fontFamily: 'inherit',
           outline: 'none',
           boxSizing: 'border-box',
           appearance: 'auto',
+          transition: 'border-color 150ms ease, box-shadow 150ms ease',
+        }}
+        onFocus={(e) => {
+          e.currentTarget.style.borderColor = error
+            ? v(tokens.colorDanger)
+            : v(tokens.colorBorderFocus);
+          e.currentTarget.style.boxShadow = error
+            ? '0 0 0 3px rgba(239, 68, 68, 0.15)'
+            : v(tokens.shadowGlow);
+          props.onFocus?.(e);
+        }}
+        onBlur={(e) => {
+          e.currentTarget.style.borderColor = error
+            ? v(tokens.colorDanger)
+            : v(tokens.colorBorder);
+          e.currentTarget.style.boxShadow = 'none';
+          props.onBlur?.(e);
         }}
         {...props}
       >
@@ -75,7 +96,7 @@ export function Select({
           style={{
             fontSize: '12px',
             color: v(tokens.colorDanger),
-            marginTop: '4px',
+            marginTop: '6px',
           }}
         >
           {error}

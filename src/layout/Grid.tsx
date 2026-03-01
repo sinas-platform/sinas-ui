@@ -1,4 +1,5 @@
 import React from 'react';
+import { injectBaseStyles } from '../theme/tokens';
 
 export interface GridProps {
   children: React.ReactNode;
@@ -14,6 +15,8 @@ export function Grid({
   style,
   ...props
 }: GridProps & React.HTMLAttributes<HTMLDivElement>) {
+  injectBaseStyles();
+
   const gridCols = typeof columns === 'number' ? `repeat(${columns}, 1fr)` : columns;
 
   return (

@@ -1,4 +1,5 @@
 import React from 'react';
+import { injectBaseStyles } from '../theme/tokens';
 
 export interface StackProps {
   children: React.ReactNode;
@@ -18,6 +19,8 @@ export function Stack({
   style,
   ...props
 }: StackProps & React.HTMLAttributes<HTMLDivElement>) {
+  injectBaseStyles();
+
   return (
     <div
       style={{

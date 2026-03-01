@@ -1,5 +1,5 @@
 import React from 'react';
-import { v, tokens } from '../theme/tokens';
+import { v, tokens, injectBaseStyles } from '../theme/tokens';
 
 export interface StatProps {
   label: string;
@@ -10,9 +10,9 @@ export interface StatProps {
 }
 
 const trendColors: Record<string, string> = {
-  up: '#22c55e',
-  down: '#ef4444',
-  neutral: '#64748b',
+  up: '#4ade80',
+  down: '#f87171',
+  neutral: '#888888',
 };
 
 export function Stat({
@@ -23,14 +23,17 @@ export function Stat({
   style,
   ...props
 }: StatProps & React.HTMLAttributes<HTMLDivElement>) {
+  injectBaseStyles();
+
   return (
     <div style={style} {...props}>
       <div
         style={{
-          fontSize: '12px',
+          fontSize: '11px',
+          fontWeight: 500,
           color: v(tokens.colorTextMuted),
           textTransform: 'uppercase',
-          letterSpacing: '0.05em',
+          letterSpacing: '0.06em',
         }}
       >
         {label}
@@ -41,6 +44,7 @@ export function Stat({
           fontWeight: 700,
           color: v(tokens.colorText),
           margin: '4px 0',
+          letterSpacing: '-0.02em',
         }}
       >
         {value}

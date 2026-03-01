@@ -1,5 +1,5 @@
 import React from 'react';
-import { v, tokens } from '../theme/tokens';
+import { v, tokens, injectBaseStyles } from '../theme/tokens';
 import type { AlertType } from '../types';
 
 export interface AlertProps {
@@ -11,11 +11,32 @@ export interface AlertProps {
   style?: React.CSSProperties;
 }
 
-const alertColors: Record<AlertType, { bg: string; border: string; text: string }> = {
-  info: { bg: '#eff6ff', border: '#bfdbfe', text: '#1e40af' },
-  success: { bg: '#f0fdf4', border: '#bbf7d0', text: '#166534' },
-  warning: { bg: '#fffbeb', border: '#fde68a', text: '#92400e' },
-  error: { bg: '#fef2f2', border: '#fecaca', text: '#991b1b' },
+// Dark-mode glass alerts — colored tint on dark background
+const alertColors: Record<AlertType, { bg: string; border: string; text: string; accent: string }> = {
+  info: {
+    bg: 'rgba(59, 130, 246, 0.08)',
+    border: 'rgba(59, 130, 246, 0.2)',
+    text: '#93c5fd',
+    accent: '#3b82f6',
+  },
+  success: {
+    bg: 'rgba(34, 197, 94, 0.08)',
+    border: 'rgba(34, 197, 94, 0.2)',
+    text: '#86efac',
+    accent: '#22c55e',
+  },
+  warning: {
+    bg: 'rgba(234, 179, 8, 0.08)',
+    border: 'rgba(234, 179, 8, 0.2)',
+    text: '#fde047',
+    accent: '#eab308',
+  },
+  error: {
+    bg: 'rgba(239, 68, 68, 0.08)',
+    border: 'rgba(239, 68, 68, 0.2)',
+    text: '#fca5a5',
+    accent: '#ef4444',
+  },
 };
 
 export function Alert({
@@ -27,6 +48,7 @@ export function Alert({
   style,
   ...props
 }: AlertProps & React.HTMLAttributes<HTMLDivElement>) {
+  injectBaseStyles();
   const [dismissed, setDismissed] = React.useState(false);
   if (dismissed) return null;
 
@@ -41,25 +63,39 @@ export function Alert({
     <div
       role="alert"
       style={{
-        padding: '12px 16px',
+        padding: '14px 18px',
         borderRadius: v(tokens.radiusMd),
         backgroundColor: c.bg,
         border: `1px solid ${c.border}`,
         color: c.text,
-        fontSize: '14px',
+        fontSize: '13px',
         position: 'relative',
+        backdropFilter: `blur(${v(tokens.glassBlur)})`,
+        WebkitBackdropFilter: `blur(${v(tokens.glassBlur)})`,
         ...style,
       }}
       {...props}
     >
+      {/* Accent bar on the left */}
+      <div
+        style={{
+          position: 'absolute',
+          left: 0,
+          top: '8px',
+          bottom: '8px',
+          width: '3px',
+          borderRadius: '2px',
+          backgroundColor: c.accent,
+        }}
+      />
       {dismissible && (
         <button
           onClick={handleDismiss}
           aria-label="Dismiss"
           style={{
             position: 'absolute',
-            top: '8px',
-            right: '8px',
+            top: '10px',
+            right: '10px',
             background: 'none',
             border: 'none',
             color: c.text,
@@ -67,15 +103,16 @@ export function Alert({
             fontSize: '16px',
             lineHeight: 1,
             padding: '2px 6px',
+            opacity: 0.6,
           }}
         >
           {'\u00d7'}
         </button>
       )}
       {title && (
-        <div style={{ fontWeight: 600, marginBottom: '4px' }}>{title}</div>
+        <div style={{ fontWeight: 600, marginBottom: '4px', color: c.text }}>{title}</div>
       )}
-      {children}
+      <div style={{ paddingLeft: '10px' }}>{children}</div>
     </div>
   );
 }

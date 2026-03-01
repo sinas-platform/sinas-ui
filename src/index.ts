@@ -17,7 +17,7 @@ export { Alert } from './feedback/Alert';
 export { Skeleton } from './feedback/Skeleton';
 
 // Theme
-export { tokens, defaults, v } from './theme/tokens';
+export { tokens, defaults, v, injectBaseStyles } from './theme/tokens';
 
 // Types
 export type { StackProps } from './layout/Stack';

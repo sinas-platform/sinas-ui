@@ -2,18 +2,38 @@
  * CSS custom property tokens for theming.
  * Components read these at runtime via var().
  * Override by setting CSS custom properties on a parent element or via css_overrides.
+ *
+ * Default: SINAS dark theme — dark backgrounds, orange accent, glass panels.
  */
 
 export const tokens = {
-  // Colors
+  // Brand
   colorPrimary: '--sinas-color-primary',
+  colorPrimaryHover: '--sinas-color-primary-hover',
+  colorPrimaryMuted: '--sinas-color-primary-muted',   // Orange with low opacity (glows, focus rings)
   colorDanger: '--sinas-color-danger',
   colorSuccess: '--sinas-color-success',
+  colorWarning: '--sinas-color-warning',
+
+  // Text
   colorText: '--sinas-color-text',
   colorTextMuted: '--sinas-color-text-muted',
-  colorBorder: '--sinas-color-border',
+  colorTextInverse: '--sinas-color-text-inverse',      // Dark text on light bg (e.g. orange buttons)
+
+  // Surfaces
   colorBg: '--sinas-color-bg',
   colorBgSubtle: '--sinas-color-bg-subtle',
+  colorBgElevated: '--sinas-color-bg-elevated',        // Cards / elevated panels
+
+  // Glass
+  colorGlass: '--sinas-color-glass',                   // Semi-transparent panel bg
+  colorGlassBorder: '--sinas-color-glass-border',      // Subtle white border
+  colorGlassHover: '--sinas-color-glass-hover',        // Hovered glass surface
+  glassBlur: '--sinas-glass-blur',                     // Backdrop blur radius
+
+  // Borders
+  colorBorder: '--sinas-color-border',
+  colorBorderFocus: '--sinas-color-border-focus',
 
   // Radii
   radiusSm: '--sinas-radius-sm',
@@ -23,25 +43,100 @@ export const tokens = {
   // Typography
   fontSans: '--sinas-font-sans',
   fontMono: '--sinas-font-mono',
+
+  // Shadows
+  shadowGlow: '--sinas-shadow-glow',                   // Orange glow for focus/primary elements
 } as const;
 
 export const defaults: Record<string, string> = {
-  [tokens.colorPrimary]: '#3b82f6',
+  // Brand
+  [tokens.colorPrimary]: '#f97316',
+  [tokens.colorPrimaryHover]: '#ea580c',
+  [tokens.colorPrimaryMuted]: 'rgba(249, 115, 22, 0.15)',
   [tokens.colorDanger]: '#ef4444',
   [tokens.colorSuccess]: '#22c55e',
-  [tokens.colorText]: '#1e293b',
-  [tokens.colorTextMuted]: '#64748b',
-  [tokens.colorBorder]: '#e2e8f0',
-  [tokens.colorBg]: '#ffffff',
-  [tokens.colorBgSubtle]: '#f8fafc',
-  [tokens.radiusSm]: '4px',
-  [tokens.radiusMd]: '6px',
-  [tokens.radiusLg]: '8px',
-  [tokens.fontSans]: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
-  [tokens.fontMono]: "ui-monospace, SFMono-Regular, 'SF Mono', Menlo, monospace",
+  [tokens.colorWarning]: '#eab308',
+
+  // Text
+  [tokens.colorText]: '#ededed',
+  [tokens.colorTextMuted]: '#888888',
+  [tokens.colorTextInverse]: '#111111',
+
+  // Surfaces
+  [tokens.colorBg]: '#090909',
+  [tokens.colorBgSubtle]: '#111111',
+  [tokens.colorBgElevated]: '#161616',
+
+  // Glass
+  [tokens.colorGlass]: 'rgba(255, 255, 255, 0.03)',
+  [tokens.colorGlassBorder]: 'rgba(255, 255, 255, 0.06)',
+  [tokens.colorGlassHover]: 'rgba(255, 255, 255, 0.06)',
+  [tokens.glassBlur]: '12px',
+
+  // Borders
+  [tokens.colorBorder]: 'rgba(255, 255, 255, 0.08)',
+  [tokens.colorBorderFocus]: '#f97316',
+
+  // Radii
+  [tokens.radiusSm]: '6px',
+  [tokens.radiusMd]: '8px',
+  [tokens.radiusLg]: '12px',
+
+  // Typography
+  [tokens.fontSans]: "Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+  [tokens.fontMono]: "ui-monospace, 'SF Mono', SFMono-Regular, Menlo, monospace",
+
+  // Shadows
+  [tokens.shadowGlow]: '0 0 0 3px rgba(249, 115, 22, 0.15)',
 };
 
 /** Helper: read a CSS var with fallback to default */
 export function v(token: string): string {
   return `var(${token}, ${defaults[token] || ''})`;
+}
+
+/**
+ * Inject SINAS base styles (body bg, font, CSS custom properties).
+ * Called once on first component render.
+ */
+let baseInjected = false;
+export function injectBaseStyles(): void {
+  if (baseInjected || typeof document === 'undefined') return;
+  baseInjected = true;
+
+  const vars = Object.entries(defaults)
+    .map(([prop, val]) => `${prop}: ${val};`)
+    .join('\n  ');
+
+  const css = `
+:root {
+  ${vars}
+}
+body {
+  margin: 0;
+  background-color: ${defaults[tokens.colorBg]};
+  color: ${defaults[tokens.colorText]};
+  font-family: ${defaults[tokens.fontSans]};
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+@keyframes sinas-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+@keyframes sinas-glow {
+  0%, 100% { box-shadow: 0 0 8px rgba(249, 115, 22, 0.2); }
+  50% { box-shadow: 0 0 16px rgba(249, 115, 22, 0.35); }
+}
+`;
+
+  const style = document.createElement('style');
+  style.id = 'sinas-ui-base';
+  style.textContent = css;
+  document.head.prepend(style);
 }

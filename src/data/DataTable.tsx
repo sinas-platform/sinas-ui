@@ -1,5 +1,5 @@
 import React from 'react';
-import { v, tokens } from '../theme/tokens';
+import { v, tokens, injectBaseStyles } from '../theme/tokens';
 import type { ColumnDef } from '../types';
 
 export interface DataTableProps {
@@ -18,12 +18,22 @@ export function DataTable({
   style,
   ...props
 }: DataTableProps & React.HTMLAttributes<HTMLTableElement>) {
+  injectBaseStyles();
   const [sortKey, setSortKey] = React.useState<string | null>(null);
   const [sortDir, setSortDir] = React.useState<'asc' | 'desc'>('asc');
 
   if (!data.length) {
     return (
-      <p style={{ color: v(tokens.colorTextMuted), padding: '16px' }}>No data</p>
+      <div
+        style={{
+          color: v(tokens.colorTextMuted),
+          padding: '32px 16px',
+          textAlign: 'center',
+          fontSize: '13px',
+        }}
+      >
+        No data
+      </div>
     );
   }
 
@@ -58,7 +68,7 @@ export function DataTable({
       style={{
         width: '100%',
         borderCollapse: 'collapse',
-        fontSize: '14px',
+        fontSize: '13px',
         ...style,
       }}
       {...props}
@@ -71,16 +81,23 @@ export function DataTable({
               onClick={() => handleSort(col.key)}
               style={{
                 textAlign: 'left',
-                padding: '8px 12px',
-                borderBottom: `2px solid ${v(tokens.colorBorder)}`,
-                fontWeight: 600,
+                padding: '10px 14px',
+                borderBottom: `1px solid ${v(tokens.colorGlassBorder)}`,
+                fontWeight: 500,
+                fontSize: '11px',
                 color: v(tokens.colorTextMuted),
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em',
                 cursor: sortable ? 'pointer' : 'default',
                 userSelect: sortable ? 'none' : undefined,
               }}
             >
               {col.label}
-              {sortable && sortKey === col.key && (sortDir === 'asc' ? ' \u2191' : ' \u2193')}
+              {sortable && sortKey === col.key && (
+                <span style={{ marginLeft: '4px', color: v(tokens.colorPrimary) }}>
+                  {sortDir === 'asc' ? '\u2191' : '\u2193'}
+                </span>
+              )}
             </th>
           ))}
         </tr>
@@ -90,14 +107,24 @@ export function DataTable({
           <tr
             key={i}
             onClick={onRowClick ? () => onRowClick(row, i) : undefined}
-            style={{ cursor: onRowClick ? 'pointer' : 'default' }}
+            style={{
+              cursor: onRowClick ? 'pointer' : 'default',
+              transition: 'background 100ms ease',
+            }}
+            onMouseEnter={(e) => {
+              (e.currentTarget as HTMLTableRowElement).style.background =
+                v(tokens.colorGlassHover);
+            }}
+            onMouseLeave={(e) => {
+              (e.currentTarget as HTMLTableRowElement).style.background = 'transparent';
+            }}
           >
             {cols.map(col => (
               <td
                 key={col.key}
                 style={{
-                  padding: '8px 12px',
-                  borderBottom: `1px solid ${v(tokens.colorBgSubtle)}`,
+                  padding: '10px 14px',
+                  borderBottom: `1px solid ${v(tokens.colorGlassBorder)}`,
                   color: v(tokens.colorText),
                 }}
               >

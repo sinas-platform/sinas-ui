@@ -12,6 +12,6 @@ export interface ColumnDef {
 }
 
 export type AlertType = 'info' | 'success' | 'warning' | 'error';
-export type ButtonVariant = 'primary' | 'secondary' | 'danger';
+export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger';
 export type ButtonSize = 'sm' | 'md' | 'lg';
 export type SkeletonVariant = 'line' | 'circle';

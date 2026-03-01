@@ -1,5 +1,5 @@
 import React from 'react';
-import { v, tokens } from '../theme/tokens';
+import { v, tokens, injectBaseStyles } from '../theme/tokens';
 import type { ButtonVariant, ButtonSize } from '../types';
 
 export interface ButtonProps {
@@ -12,17 +12,43 @@ export interface ButtonProps {
   style?: React.CSSProperties;
 }
 
-const variantStyles: Record<ButtonVariant, React.CSSProperties> = {
-  primary: { color: '#fff', border: 'none' },
-  secondary: { border: '1px solid' },
-  danger: { color: '#fff', border: 'none' },
+const sizeStyles: Record<ButtonSize, React.CSSProperties> = {
+  sm: { padding: '6px 12px', fontSize: '12px' },
+  md: { padding: '8px 18px', fontSize: '13px' },
+  lg: { padding: '12px 28px', fontSize: '15px' },
 };
 
-const sizeStyles: Record<ButtonSize, React.CSSProperties> = {
-  sm: { padding: '4px 10px', fontSize: '12px' },
-  md: { padding: '8px 16px', fontSize: '14px' },
-  lg: { padding: '12px 24px', fontSize: '16px' },
-};
+function getVariantStyles(variant: ButtonVariant): React.CSSProperties {
+  switch (variant) {
+    case 'primary':
+      return {
+        backgroundColor: v(tokens.colorPrimary),
+        color: '#fff',
+        border: 'none',
+        fontWeight: 600,
+      };
+    case 'secondary':
+      return {
+        backgroundColor: v(tokens.colorGlass),
+        color: v(tokens.colorText),
+        border: `1px solid ${v(tokens.colorGlassBorder)}`,
+        backdropFilter: `blur(${v(tokens.glassBlur)})`,
+        WebkitBackdropFilter: `blur(${v(tokens.glassBlur)})`,
+      };
+    case 'ghost':
+      return {
+        backgroundColor: 'transparent',
+        color: v(tokens.colorTextMuted),
+        border: '1px solid transparent',
+      };
+    case 'danger':
+      return {
+        backgroundColor: 'rgba(239, 68, 68, 0.12)',
+        color: '#f87171',
+        border: '1px solid rgba(239, 68, 68, 0.2)',
+      };
+  }
+}
 
 export function Button({
   children,
@@ -34,13 +60,8 @@ export function Button({
   style,
   ...props
 }: ButtonProps & Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, 'style'>) {
+  injectBaseStyles();
   const isDisabled = disabled || loading;
-
-  const bgMap: Record<ButtonVariant, string> = {
-    primary: v(tokens.colorPrimary),
-    secondary: v(tokens.colorBgSubtle),
-    danger: v(tokens.colorDanger),
-  };
 
   return (
     <button
@@ -50,12 +71,11 @@ export function Button({
         borderRadius: v(tokens.radiusMd),
         cursor: isDisabled ? 'not-allowed' : 'pointer',
         opacity: isDisabled ? 0.5 : 1,
-        backgroundColor: bgMap[variant],
-        borderColor: variant === 'secondary' ? v(tokens.colorBorder) : undefined,
-        color: variant === 'secondary' ? v(tokens.colorText) : '#fff',
         fontFamily: 'inherit',
         lineHeight: 1.5,
-        ...variantStyles[variant],
+        letterSpacing: '-0.01em',
+        transition: 'all 150ms ease',
+        ...getVariantStyles(variant),
         ...sizeStyles[size],
         ...style,
       }}

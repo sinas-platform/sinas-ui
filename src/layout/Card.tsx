@@ -1,5 +1,5 @@
 import React from 'react';
-import { v, tokens } from '../theme/tokens';
+import { v, tokens, injectBaseStyles } from '../theme/tokens';
 
 export interface CardProps {
   children: React.ReactNode;
@@ -7,6 +7,7 @@ export interface CardProps {
   subtitle?: React.ReactNode;
   footer?: React.ReactNode;
   padding?: number;
+  glass?: boolean;
   style?: React.CSSProperties;
 }
 
@@ -15,29 +16,44 @@ export function Card({
   title,
   subtitle,
   footer,
-  padding = 16,
+  padding = 20,
+  glass = true,
   style,
   ...props
 }: CardProps & React.HTMLAttributes<HTMLDivElement>) {
+  injectBaseStyles();
+
+  const baseStyle: React.CSSProperties = glass
+    ? {
+        background: v(tokens.colorGlass),
+        backdropFilter: `blur(${v(tokens.glassBlur)})`,
+        WebkitBackdropFilter: `blur(${v(tokens.glassBlur)})`,
+        border: `1px solid ${v(tokens.colorGlassBorder)}`,
+      }
+    : {
+        background: v(tokens.colorBgElevated),
+        border: `1px solid ${v(tokens.colorBorder)}`,
+      };
+
   return (
     <div
       style={{
-        border: `1px solid ${v(tokens.colorBorder)}`,
         borderRadius: v(tokens.radiusLg),
         padding: `${padding}px`,
-        backgroundColor: v(tokens.colorBg),
+        ...baseStyle,
         ...style,
       }}
       {...props}
     >
       {title && (
-        <div style={{ marginBottom: subtitle ? '4px' : '12px' }}>
+        <div style={{ marginBottom: subtitle ? '4px' : '16px' }}>
           <h3
             style={{
               margin: 0,
-              fontSize: '16px',
+              fontSize: '15px',
               fontWeight: 600,
               color: v(tokens.colorText),
+              letterSpacing: '-0.01em',
             }}
           >
             {title}
@@ -49,7 +65,7 @@ export function Card({
           style={{
             fontSize: '13px',
             color: v(tokens.colorTextMuted),
-            marginBottom: '12px',
+            marginBottom: '16px',
           }}
         >
           {subtitle}
@@ -59,9 +75,9 @@ export function Card({
       {footer && (
         <div
           style={{
-            marginTop: '12px',
-            paddingTop: '12px',
-            borderTop: `1px solid ${v(tokens.colorBorder)}`,
+            marginTop: '16px',
+            paddingTop: '16px',
+            borderTop: `1px solid ${v(tokens.colorGlassBorder)}`,
           }}
         >
           {footer}
