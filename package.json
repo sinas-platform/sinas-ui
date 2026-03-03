@@ -1,6 +1,6 @@
 {
   "name": "@sinas/ui",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "SINAS UI — React component library for building SINAS components",
   "license": "AGPL-3.0",
   "author": "SINAS Platform <https://github.com/sinas-platform>",
@@ -8,7 +8,12 @@
     "type": "git",
     "url": "https://github.com/sinas-platform/sinas-ui.git"
   },
-  "keywords": ["sinas", "ui", "react", "components"],
+  "keywords": [
+    "sinas",
+    "ui",
+    "react",
+    "components"
+  ],
   "type": "module",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
@@ -28,12 +33,17 @@
     "dev": "tsup --watch",
     "typecheck": "tsc --noEmit"
   },
+  "dependencies": {
+    "marked": "^15.0.0"
+  },
   "peerDependencies": {
-    "react": ">=17.0.0"
+    "react": ">=17.0.0",
+    "@sinas/sdk": ">=0.1.0"
   },
   "devDependencies": {
     "react": "^18.3.1",
     "@types/react": "^18.3.12",
+    "@sinas/sdk": "file:../sinas-js",
     "tsup": "^8.3.5",
     "typescript": "^5.7.2"
   }
