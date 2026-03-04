@@ -1,6 +1,7 @@
 import React from 'react';
 import { useChat } from '@sinas/sdk';
-import type { ChatSessionMessage, MessageContent } from '@sinas/sdk';
+import type { ChatSessionMessage, MessageContent, ToolStatus } from '@sinas/sdk';
+
 import { v, tokens, injectBaseStyles } from '../theme/tokens';
 import { injectMarkdownStyles } from './markdownStyles';
 import { ChatMessage } from './ChatMessage';
@@ -58,6 +59,7 @@ export function Chat({
     streaming,
     error,
     pendingApprovals,
+    toolStatus,
     send,
     approve,
     reject,
@@ -124,7 +126,7 @@ export function Chat({
   // Auto-scroll to bottom on new messages or streaming
   React.useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, pendingApprovals]);
+  }, [messages, pendingApprovals, toolStatus]);
 
   const handleSend = React.useCallback(
     (content: MessageContent) => {
@@ -194,27 +196,25 @@ export function Chat({
           </div>
         )}
 
-        {messages.map((msg: ChatSessionMessage) => (
-          <ChatMessage
-            key={msg.id}
-            message={msg}
-            agentIconUrl={agentIconUrl}
-            apiBaseUrl={resolvedApiBaseUrl}
-          />
-        ))}
-
-        {/* Pending approvals */}
-        {pendingApprovals.map((approval) => (
-          <div key={approval.toolCallId} style={{ padding: '4px 0' }}>
-            <ApprovalCard
-              functionName={approval.functionName}
-              functionNamespace={approval.functionNamespace}
-              arguments={approval.arguments}
-              onApprove={() => approve(approval.toolCallId)}
-              onReject={() => reject(approval.toolCallId)}
+        {messages.map((msg: ChatSessionMessage) => {
+          // Compute thinking text: show latest running tool description, or fall back to "Thinking..."
+          let thinkingText: string | undefined;
+          if (msg.streaming && toolStatus.length > 0) {
+            const running = toolStatus.filter((t) => t.status === 'running');
+            if (running.length > 0) {
+              thinkingText = running[running.length - 1].description;
+            }
+          }
+          return (
+            <ChatMessage
+              key={msg.id}
+              message={msg}
+              agentIconUrl={agentIconUrl}
+              apiBaseUrl={resolvedApiBaseUrl}
+              thinkingText={thinkingText}
             />
-          </div>
-        ))}
+          );
+        })}
 
         {/* Error display */}
         {error && (
@@ -251,6 +251,34 @@ export function Chat({
 
         <div ref={messagesEndRef} />
       </div>
+
+      {/* Pending approvals — pinned above input */}
+      {pendingApprovals.length > 0 && (
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '6px',
+            padding: '8px 16px',
+            borderTop: `1px solid ${v(tokens.colorBorder)}`,
+            backgroundColor: v(tokens.colorBg),
+            flexShrink: 0,
+            maxHeight: '40%',
+            overflowY: 'auto',
+          }}
+        >
+          {pendingApprovals.map((approval) => (
+            <ApprovalCard
+              key={approval.toolCallId}
+              functionName={approval.functionName}
+              functionNamespace={approval.functionNamespace}
+              arguments={approval.arguments}
+              onApprove={() => approve(approval.toolCallId)}
+              onReject={() => reject(approval.toolCallId)}
+            />
+          ))}
+        </div>
+      )}
 
       {/* Input bar */}
       <ChatInput

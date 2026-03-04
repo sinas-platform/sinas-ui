@@ -5,6 +5,10 @@ export interface ToolCallCardProps {
   type: 'call' | 'response';
   name: string;
   content: string;
+  /** Show a running/in-progress indicator with optional status description */
+  running?: boolean;
+  /** Status description to show while running (from status_templates) */
+  statusText?: string;
 }
 
 const WrenchIcon = () => (
@@ -41,13 +45,13 @@ function formatContent(content: string): string {
   }
 }
 
-export function ToolCallCard({ type, name, content }: ToolCallCardProps) {
+export function ToolCallCard({ type, name, content, running, statusText }: ToolCallCardProps) {
   const [expanded, setExpanded] = React.useState(false);
   const isCall = type === 'call';
 
   const tint = isCall
-    ? { bg: 'rgba(234, 179, 8, 0.06)', border: 'rgba(234, 179, 8, 0.15)', text: '#fbbf24' }
-    : { bg: 'rgba(168, 85, 247, 0.06)', border: 'rgba(168, 85, 247, 0.15)', text: '#c084fc' };
+    ? { bg: 'rgba(249, 115, 22, 0.06)', border: 'rgba(249, 115, 22, 0.15)', text: '#fb923c' }
+    : { bg: 'rgba(168, 34, 50, 0.06)', border: 'rgba(168, 34, 50, 0.15)', text: '#d4556a' };
 
   return (
     <div
@@ -80,6 +84,18 @@ export function ToolCallCard({ type, name, content }: ToolCallCardProps) {
         <span style={{ fontWeight: 500 }}>
           {isCall ? 'Called' : 'Response from'} {name}
         </span>
+        {running && (
+          <span
+            style={{
+              marginLeft: '4px',
+              color: v(tokens.colorTextMuted),
+              fontWeight: 400,
+              animation: 'sinas-pulse 1.5s ease-in-out infinite',
+            }}
+          >
+            {statusText ? `— ${statusText}` : '— running...'}
+          </span>
+        )}
         <span style={{ marginLeft: 'auto' }}>
           <ChevronIcon expanded={expanded} />
         </span>

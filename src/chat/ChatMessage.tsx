@@ -8,6 +8,8 @@ export interface ChatMessageProps {
   message: ChatSessionMessage;
   agentIconUrl?: string;
   apiBaseUrl?: string;
+  /** Override "Thinking..." text (e.g. with active tool description) */
+  thinkingText?: string;
 }
 
 const BotIcon = () => (
@@ -217,7 +219,7 @@ function MultimodalContent({
   );
 }
 
-export function ChatMessage({ message, agentIconUrl, apiBaseUrl }: ChatMessageProps) {
+export function ChatMessage({ message, agentIconUrl, apiBaseUrl, thinkingText }: ChatMessageProps) {
   const isUser = message.role === 'user';
   const isTool = message.role === 'tool';
 
@@ -228,7 +230,7 @@ export function ChatMessage({ message, agentIconUrl, apiBaseUrl }: ChatMessagePr
         const parsed = JSON.parse(message.content);
         if (parsed?.type === 'component' && parsed.render_token) {
           return (
-            <div style={{ padding: '4px 0 4px 36px', maxWidth: '85%' }}>
+            <div style={{ padding: '4px 0 4px 32px', maxWidth: '85%' }}>
               <ComponentFrame part={parsed} apiBaseUrl={apiBaseUrl} />
             </div>
           );
@@ -239,7 +241,7 @@ export function ChatMessage({ message, agentIconUrl, apiBaseUrl }: ChatMessagePr
     }
 
     return (
-      <div style={{ padding: '4px 0 4px 36px', maxWidth: '85%' }}>
+      <div style={{ padding: '4px 0 4px 32px', maxWidth: '85%' }}>
         <ToolCallCard
           type="response"
           name={message.name || 'Tool Result'}
@@ -366,7 +368,7 @@ export function ChatMessage({ message, agentIconUrl, apiBaseUrl }: ChatMessagePr
               fontSize: '14px',
             }}
           >
-            <span style={{ animation: 'sinas-pulse 1.5s ease-in-out infinite' }}>Thinking...</span>
+            <span style={{ animation: 'sinas-pulse 1.5s ease-in-out infinite' }}>{thinkingText || 'Thinking...'}</span>
           </div>
         )}
       </div>
