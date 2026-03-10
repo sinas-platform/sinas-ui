@@ -1,5 +1,5 @@
 import React from 'react';
-import { useChat } from '@sinas/sdk';
+import { useChat, useClient, uploadFile, generateFileUrl } from '@sinas/sdk';
 import type { ChatSessionMessage, MessageContent, ToolStatus } from '@sinas/sdk';
 
 import { v, tokens, injectBaseStyles } from '../theme/tokens';
@@ -128,6 +128,35 @@ export function Chat({
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, pendingApprovals, toolStatus]);
 
+  const client = useClient();
+
+  const handleUploadImage = React.useCallback(
+    async (file: File): Promise<string> => {
+      const reader = new FileReader();
+      const base64 = await new Promise<string>((resolve, reject) => {
+        reader.onload = () => {
+          const result = reader.result as string;
+          resolve(result.split(',')[1]); // strip data URL prefix
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+
+      const uniqueName = `${chatId || 'new'}-${Date.now()}-${file.name}`;
+      await uploadFile(client, 'default', 'chat-uploads', {
+        name: uniqueName,
+        content_base64: base64,
+        content_type: file.type,
+        visibility: 'private',
+      });
+      const urlResult = await generateFileUrl(
+        client, 'default', 'chat-uploads', uniqueName, 2592000,
+      );
+      return urlResult.url;
+    },
+    [client, chatId],
+  );
+
   const handleSend = React.useCallback(
     (content: MessageContent) => {
       send(content);
@@ -197,6 +226,37 @@ export function Chat({
         )}
 
         {messages.map((msg: ChatSessionMessage) => {
+          // Skip standalone tool result messages — their content is shown
+          // inline in the parent tool call bubble.
+          if (msg.role === 'tool' && msg.toolCallId) {
+            // During streaming: merged into toolResults map
+            const mergedDuringStream = messages.some(
+              (m) => m.toolResults?.[msg.toolCallId!],
+            );
+            // After server refresh: match tool result to tool call by ID
+            const matchedToCall = messages.some(
+              (m) => m.toolCalls?.some((tc) => tc.id === msg.toolCallId),
+            );
+            if (mergedDuringStream || matchedToCall) return null;
+          }
+
+          // For server-loaded messages, build toolResults from sibling tool messages
+          let enrichedMsg = msg;
+          if (msg.toolCalls && !msg.toolResults) {
+            const results: Record<string, { content: string; name: string }> = {};
+            for (const tc of msg.toolCalls) {
+              const toolMsg = messages.find(
+                (m) => m.role === 'tool' && m.toolCallId === tc.id,
+              );
+              if (toolMsg?.content) {
+                results[tc.id] = { content: toolMsg.content, name: toolMsg.name || tc.function.name };
+              }
+            }
+            if (Object.keys(results).length > 0) {
+              enrichedMsg = { ...msg, toolResults: results };
+            }
+          }
+
           // Compute thinking text: show latest running tool description, or fall back to "Thinking..."
           let thinkingText: string | undefined;
           if (msg.streaming && toolStatus.length > 0) {
@@ -208,7 +268,7 @@ export function Chat({
           return (
             <ChatMessage
               key={msg.id}
-              message={msg}
+              message={enrichedMsg}
               agentIconUrl={agentIconUrl}
               apiBaseUrl={resolvedApiBaseUrl}
               thinkingText={thinkingText}
@@ -287,6 +347,7 @@ export function Chat({
         streaming={streaming}
         disabled={loading}
         placeholder={placeholder}
+        onUploadImage={handleUploadImage}
       />
     </div>
   );

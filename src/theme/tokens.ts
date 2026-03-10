@@ -133,6 +133,10 @@ body {
   0%, 100% { box-shadow: 0 0 8px rgba(249, 115, 22, 0.2); }
   50% { box-shadow: 0 0 16px rgba(249, 115, 22, 0.35); }
 }
+@keyframes sinas-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
 `;
 
   const style = document.createElement('style');

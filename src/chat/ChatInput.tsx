@@ -8,6 +8,9 @@ export interface ChatInputProps {
   streaming?: boolean;
   disabled?: boolean;
   placeholder?: string;
+  /** Upload an image file and return a URL. When provided, images are uploaded
+   *  to storage instead of being sent as inline base64 data URIs. */
+  onUploadImage?: (file: File) => Promise<string>;
 }
 
 type AttachmentType = 'image' | 'audio' | 'file';
@@ -17,6 +20,12 @@ interface Attachment {
   file: File;
   preview?: string;
   type: AttachmentType;
+  /** For images: the uploaded URL (set after successful upload) */
+  uploadedUrl?: string;
+  /** Upload in progress */
+  uploading?: boolean;
+  /** Upload error message (e.g. content filter rejection) */
+  error?: string;
 }
 
 const SendIcon = () => (
@@ -77,6 +86,7 @@ export function ChatInput({
   streaming = false,
   disabled = false,
   placeholder = 'Type a message...',
+  onUploadImage,
 }: ChatInputProps) {
   const [value, setValue] = React.useState('');
   const [attachments, setAttachments] = React.useState<Attachment[]>([]);
@@ -85,21 +95,24 @@ export function ChatInput({
 
   const handleSubmit = async () => {
     const trimmed = value.trim();
-    if ((!trimmed && attachments.length === 0) || disabled) return;
+    if ((!trimmed && validAttachments.length === 0) || disabled || anyUploading) return;
 
-    if (attachments.length > 0) {
+    if (validAttachments.length > 0) {
       const parts: ContentPart[] = [];
 
       if (trimmed) {
         parts.push({ type: 'text', text: trimmed });
       }
 
-      for (const attachment of attachments) {
-        const base64 = await fileToBase64(attachment.file);
-
-        if (attachment.type === 'image') {
+      for (const attachment of validAttachments) {
+        if (attachment.type === 'image' && attachment.uploadedUrl) {
+          parts.push({ type: 'image', image: attachment.uploadedUrl });
+        } else if (attachment.type === 'image') {
+          // No onUploadImage handler — send as base64 (standalone usage without collections)
+          const base64 = await fileToBase64(attachment.file);
           parts.push({ type: 'image', image: base64 });
         } else if (attachment.type === 'audio') {
+          const base64 = await fileToBase64(attachment.file);
           const format = attachment.file.name.split('.').pop() || 'mp3';
           parts.push({
             type: 'audio',
@@ -107,6 +120,7 @@ export function ChatInput({
             format,
           });
         } else {
+          const base64 = await fileToBase64(attachment.file);
           parts.push({
             type: 'file',
             file_data: base64.split(',')[1],
@@ -157,7 +171,23 @@ export function ChatInput({
         type = 'audio';
       }
 
-      setAttachments((prev) => [...prev, { id, file, preview, type }]);
+      setAttachments((prev) => [...prev, { id, file, preview, type, uploading: type === 'image' && !!onUploadImage }]);
+
+      // Upload images immediately (runs content filter on the server)
+      if (type === 'image' && onUploadImage) {
+        onUploadImage(file)
+          .then((url) => {
+            setAttachments((prev) =>
+              prev.map((a) => a.id === id ? { ...a, uploadedUrl: url, uploading: false } : a),
+            );
+          })
+          .catch((err) => {
+            const message = err instanceof Error ? err.message : String(err);
+            setAttachments((prev) =>
+              prev.map((a) => a.id === id ? { ...a, uploading: false, error: message } : a),
+            );
+          });
+      }
     }
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
@@ -168,7 +198,9 @@ export function ChatInput({
     setAttachments((prev) => prev.filter((a) => a.id !== id));
   };
 
-  const hasContent = value.trim() || attachments.length > 0;
+  const anyUploading = attachments.some((a) => a.uploading);
+  const validAttachments = attachments.filter((a) => !a.error);
+  const hasContent = value.trim() || validAttachments.length > 0;
 
   return (
     <div
@@ -196,10 +228,11 @@ export function ChatInput({
                 gap: '8px',
                 padding: '6px 10px',
                 borderRadius: v(tokens.radiusMd),
-                backgroundColor: v(tokens.colorBgElevated),
-                border: `1px solid ${v(tokens.colorBorder)}`,
+                backgroundColor: attachment.error ? 'rgba(239, 68, 68, 0.08)' : v(tokens.colorBgElevated),
+                border: `1px solid ${attachment.error ? 'rgba(239, 68, 68, 0.3)' : v(tokens.colorBorder)}`,
                 fontSize: '13px',
-                color: v(tokens.colorTextMuted),
+                color: attachment.error ? '#fca5a5' : v(tokens.colorTextMuted),
+                opacity: attachment.uploading ? 0.6 : 1,
               }}
             >
               {attachment.type === 'image' && attachment.preview ? (
@@ -211,6 +244,7 @@ export function ChatInput({
                     height: '36px',
                     objectFit: 'cover',
                     borderRadius: '4px',
+                    opacity: attachment.error ? 0.4 : 1,
                   }}
                 />
               ) : attachment.type === 'audio' ? (
@@ -220,20 +254,21 @@ export function ChatInput({
               )}
               <span
                 style={{
-                  maxWidth: '120px',
+                  maxWidth: attachment.error ? '240px' : '120px',
                   overflow: 'hidden',
                   textOverflow: 'ellipsis',
                   whiteSpace: 'nowrap',
                 }}
+                title={attachment.error || attachment.file.name}
               >
-                {attachment.file.name}
+                {attachment.uploading ? 'Uploading...' : attachment.error || attachment.file.name}
               </span>
               <button
                 onClick={() => removeAttachment(attachment.id)}
                 style={{
                   background: 'none',
                   border: 'none',
-                  color: v(tokens.colorTextMuted),
+                  color: attachment.error ? '#fca5a5' : v(tokens.colorTextMuted),
                   cursor: 'pointer',
                   padding: '2px',
                   display: 'flex',
@@ -331,7 +366,7 @@ export function ChatInput({
         ) : (
           <button
             onClick={handleSubmit}
-            disabled={disabled || !hasContent}
+            disabled={disabled || !hasContent || anyUploading}
             style={{
               width: '40px',
               height: '42px',
@@ -339,8 +374,8 @@ export function ChatInput({
               border: 'none',
               backgroundColor: v(tokens.colorPrimary),
               color: '#fff',
-              cursor: disabled || !hasContent ? 'not-allowed' : 'pointer',
-              opacity: disabled || !hasContent ? 0.4 : 1,
+              cursor: disabled || !hasContent || anyUploading ? 'not-allowed' : 'pointer',
+              opacity: disabled || !hasContent || anyUploading ? 0.4 : 1,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',

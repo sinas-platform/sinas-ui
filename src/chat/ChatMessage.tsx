@@ -243,7 +243,6 @@ export function ChatMessage({ message, agentIconUrl, apiBaseUrl, thinkingText }:
     return (
       <div style={{ padding: '4px 0 4px 32px', maxWidth: '85%' }}>
         <ToolCallCard
-          type="response"
           name={message.name || 'Tool Result'}
           content={message.content || ''}
         />
@@ -348,16 +347,23 @@ export function ChatMessage({ message, agentIconUrl, apiBaseUrl, thinkingText }:
           </div>
         )}
         {hasToolCalls &&
-          message.toolCalls!.map((tc) => (
-            <div key={tc.id} style={{ marginTop: hasContent ? '6px' : 0 }}>
-              <ToolCallCard
-                type="call"
-                name={tc.function.name}
-                content={tc.function.arguments}
-              />
-            </div>
-          ))}
-        {message.streaming && !hasContent && (
+          message.toolCalls!.map((tc, idx) => {
+            const result = message.toolResults?.[tc.id];
+            // Derive running state: no result yet while message is still streaming
+            const isRunning = !result && !!message.streaming;
+            return (
+              <div key={tc.id} style={{ marginTop: hasContent || idx > 0 ? '6px' : 0 }}>
+                <ToolCallCard
+                  name={tc.function.name}
+                  content={tc.function.arguments}
+                  running={isRunning}
+                  statusText={tc.description}
+                  result={result?.content ?? null}
+                />
+              </div>
+            );
+          })}
+        {message.streaming && !hasContent && !hasToolCalls && (
           <div
             style={{
               padding: '10px 14px',
