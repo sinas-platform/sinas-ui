@@ -130,7 +130,7 @@ export function Chat({
 
   const client = useClient();
 
-  const handleUploadImage = React.useCallback(
+  const handleUploadFile = React.useCallback(
     async (file: File): Promise<string> => {
       const reader = new FileReader();
       const base64 = await new Promise<string>((resolve, reject) => {
@@ -347,7 +347,7 @@ export function Chat({
         streaming={streaming}
         disabled={loading}
         placeholder={placeholder}
-        onUploadImage={handleUploadImage}
+        onUploadFile={handleUploadFile}
       />
     </div>
   );

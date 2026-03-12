@@ -8,9 +8,9 @@ export interface ChatInputProps {
   streaming?: boolean;
   disabled?: boolean;
   placeholder?: string;
-  /** Upload an image file and return a URL. When provided, images are uploaded
-   *  to storage instead of being sent as inline base64 data URIs. */
-  onUploadImage?: (file: File) => Promise<string>;
+  /** Upload a file and return a URL. When provided, files are uploaded
+   *  to storage instead of being sent as inline base64 data. */
+  onUploadFile?: (file: File) => Promise<string>;
 }
 
 type AttachmentType = 'image' | 'audio' | 'file';
@@ -20,7 +20,7 @@ interface Attachment {
   file: File;
   preview?: string;
   type: AttachmentType;
-  /** For images: the uploaded URL (set after successful upload) */
+  /** The uploaded URL (set after successful upload) */
   uploadedUrl?: string;
   /** Upload in progress */
   uploading?: boolean;
@@ -86,7 +86,7 @@ export function ChatInput({
   streaming = false,
   disabled = false,
   placeholder = 'Type a message...',
-  onUploadImage,
+  onUploadFile,
 }: ChatInputProps) {
   const [value, setValue] = React.useState('');
   const [attachments, setAttachments] = React.useState<Attachment[]>([]);
@@ -108,7 +108,7 @@ export function ChatInput({
         if (attachment.type === 'image' && attachment.uploadedUrl) {
           parts.push({ type: 'image', image: attachment.uploadedUrl });
         } else if (attachment.type === 'image') {
-          // No onUploadImage handler — send as base64 (standalone usage without collections)
+          // No onUploadFile handler — send as base64 (standalone usage without collections)
           const base64 = await fileToBase64(attachment.file);
           parts.push({ type: 'image', image: base64 });
         } else if (attachment.type === 'audio') {
@@ -119,7 +119,16 @@ export function ChatInput({
             data: base64.split(',')[1],
             format,
           });
+        } else if (attachment.uploadedUrl) {
+          // File with uploaded URL
+          parts.push({
+            type: 'file',
+            file_url: attachment.uploadedUrl,
+            filename: attachment.file.name,
+            mime_type: attachment.file.type,
+          });
         } else {
+          // Fallback: inline base64 (no upload handler available)
           const base64 = await fileToBase64(attachment.file);
           parts.push({
             type: 'file',
@@ -171,11 +180,12 @@ export function ChatInput({
         type = 'audio';
       }
 
-      setAttachments((prev) => [...prev, { id, file, preview, type, uploading: type === 'image' && !!onUploadImage }]);
+      const shouldUpload = (type === 'image' || type === 'file') && !!onUploadFile;
+      setAttachments((prev) => [...prev, { id, file, preview, type, uploading: shouldUpload }]);
 
-      // Upload images immediately (runs content filter on the server)
-      if (type === 'image' && onUploadImage) {
-        onUploadImage(file)
+      // Upload images and files immediately
+      if (shouldUpload) {
+        onUploadFile(file)
           .then((url) => {
             setAttachments((prev) =>
               prev.map((a) => a.id === id ? { ...a, uploadedUrl: url, uploading: false } : a),
