@@ -229,11 +229,9 @@ export function Chat({
           // Skip standalone tool result messages — their content is shown
           // inline in the parent tool call bubble.
           if (msg.role === 'tool' && msg.toolCallId) {
-            // During streaming: merged into toolResults map
             const mergedDuringStream = messages.some(
               (m) => m.toolResults?.[msg.toolCallId!],
             );
-            // After server refresh: match tool result to tool call by ID
             const matchedToCall = messages.some(
               (m) => m.toolCalls?.some((tc) => tc.id === msg.toolCallId),
             );
@@ -257,24 +255,36 @@ export function Chat({
             }
           }
 
-          // Compute thinking text: show latest running tool description, or fall back to "Thinking..."
-          let thinkingText: string | undefined;
-          if (msg.streaming && toolStatus.length > 0) {
-            const running = toolStatus.filter((t) => t.status === 'running');
-            if (running.length > 0) {
-              thinkingText = running[running.length - 1].description;
-            }
-          }
           return (
             <ChatMessage
               key={msg.id}
               message={enrichedMsg}
               agentIconUrl={agentIconUrl}
               apiBaseUrl={resolvedApiBaseUrl}
-              thinkingText={thinkingText}
             />
           );
         })}
+
+        {/* Streaming status indicator */}
+        {streaming && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '4px 0' }}>
+            <div style={{ width: '24px', flexShrink: 0 }} />
+            <div
+              style={{
+                padding: '8px 14px',
+                color: v(tokens.colorTextMuted),
+                fontSize: '13px',
+              }}
+            >
+              <span style={{ animation: 'sinas-pulse 1.5s ease-in-out infinite' }}>
+                {(() => {
+                  const running = toolStatus.filter((t) => t.status === 'running');
+                  return running.length > 0 ? running[running.length - 1].description || 'Thinking...' : 'Thinking...';
+                })()}
+              </span>
+            </div>
+          </div>
+        )}
 
         {/* Error display */}
         {error && (

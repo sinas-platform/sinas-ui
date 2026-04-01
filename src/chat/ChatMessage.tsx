@@ -8,8 +8,6 @@ export interface ChatMessageProps {
   message: ChatSessionMessage;
   agentIconUrl?: string;
   apiBaseUrl?: string;
-  /** Override "Thinking..." text (e.g. with active tool description) */
-  thinkingText?: string;
 }
 
 const BotIcon = () => (
@@ -219,7 +217,7 @@ function MultimodalContent({
   );
 }
 
-export function ChatMessage({ message, agentIconUrl, apiBaseUrl, thinkingText }: ChatMessageProps) {
+export function ChatMessage({ message, agentIconUrl, apiBaseUrl }: ChatMessageProps) {
   const isUser = message.role === 'user';
   const isTool = message.role === 'tool';
 
@@ -363,20 +361,6 @@ export function ChatMessage({ message, agentIconUrl, apiBaseUrl, thinkingText }:
               </div>
             );
           })}
-        {message.streaming && !hasContent && !hasToolCalls && (
-          <div
-            style={{
-              padding: '10px 14px',
-              borderRadius: '16px 16px 16px 4px',
-              backgroundColor: v(tokens.colorBgElevated),
-              border: `1px solid ${v(tokens.colorBorder)}`,
-              color: v(tokens.colorTextMuted),
-              fontSize: '14px',
-            }}
-          >
-            <span style={{ animation: 'sinas-pulse 1.5s ease-in-out infinite' }}>{thinkingText || 'Thinking...'}</span>
-          </div>
-        )}
       </div>
     </div>
   );
